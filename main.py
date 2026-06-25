@@ -1,14 +1,17 @@
 import argparse
 from pathlib import Path
 
+def parse_args(argv: list[str] | None = None) -> Path | None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("file_path", nargs="?", default=None)
+    args = parser.parse_args(argv)
+    return Path(args.file_path).absolute() if args.file_path is not None else None
+
 def main():
     
     # TODO Pull out as function and commit
     # Handle command line arguments (argv) -> path: Optional(Path)
-    parser = argparse.ArgumentParser()
-    parser.add_argument("file_path", nargs="?", default=None)
-    args = parser.parse_args()
-    file_path = Path(args.file_path).absolute() if args.file_path is not None else None
+    file_path = parse_args
 
     # Pass path to io_file object to get a representation of the file usable for the state -> file buffer
      # 1. no argument -> create temp buffer in mem
