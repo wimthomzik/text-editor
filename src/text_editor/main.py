@@ -1,34 +1,34 @@
 import argparse
 from pathlib import Path
-from text_editor.model import EditorModel, TupleBuffer
+from text_editor.model import EditorModel, TupleBuffer, TextBuffer
 
-# TODO: write tests
-# Parse command line arguments for file_path and return it if present (argv argument available for testability)
+# argv param exists for testability: tests inject a list, prod reads sys.argv
 def parse_args(argv: list[str] | None = None) -> Path | None:
     parser = argparse.ArgumentParser()
     parser.add_argument("file_path", nargs="?", default=None)
     args = parser.parse_args(argv)
+    # absolute, not resolve: don't follow symlinks (vim-like)
     return Path(args.file_path).absolute() if args.file_path is not None else None
+
+
+# TODO: inject buffer type so main doesn't name TupleBuffer directly.
+#       trigger: second buffer (RopeBuffer/PieceTableBuffer) appears.
+# TODO: write tests
+def load_buffer(file_path: Path | None) -> TextBuffer:
+    if file_path is None:
+        return TupleBuffer(('',))
+    try:
+        # reminder: splitlines throws information of trailing new line away. handle case to set trailing new line flag
+        return TupleBuffer(tuple(file_path.read_text().splitlines()))    
+    except OSError:
+        return TupleBuffer(('',))
+    
 
 def main():
 
-    # Handle command line arguments (argv) -> path: Optional(Path)
     file_path = parse_args()
-    print(f"filepath: {file_path}")
-    
-    # Get a representation of the file usable for the model
-    # TODO: That is not a general implementat right? can that be abstracted for any kind of Buffer?
-    # TODO: pull out the logic into module?
-    if file_path is None:
-        document = ()
-    else:
-        try:
-            document = tuple(file_path.read_text())
-        except OSError:
-            document = ()
-    
-    # Create state object and init it with the file buffer from above
-    editor_model = EditorModel(TupleBuffer(document))
+    buffer = load_buffer(file_path)
+    editor_model = EditorModel(buffer)
     
     # Create input_handler object
         
