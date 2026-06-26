@@ -1,6 +1,9 @@
 import argparse
 from pathlib import Path
+from model import EditorModel, TupleBuffer
 
+# TODO: write tests
+# Parse command line arguments for file_path and return it if present (argv argument available for testability)
 def parse_args(argv: list[str] | None = None) -> Path | None:
     parser = argparse.ArgumentParser()
     parser.add_argument("file_path", nargs="?", default=None)
@@ -8,19 +11,25 @@ def parse_args(argv: list[str] | None = None) -> Path | None:
     return Path(args.file_path).absolute() if args.file_path is not None else None
 
 def main():
-    
-    # TODO Pull out as function and commit
-    # Handle command line arguments (argv) -> path: Optional(Path)
-    file_path = parse_args
 
-    # Pass path to io_file object to get a representation of the file usable for the state -> file buffer
-     # 1. no argument -> create temp buffer in mem
-        # 2. one argument
-            # a) valid filepath -> open & load file
-            # b) invalid filepath -> create temp buffer in mem (safe filepath in case of :wq)
+    # Handle command line arguments (argv) -> path: Optional(Path)
+    file_path = parse_args()
+    print(f"filepath: {file_path}")
+    
+    # Get a representation of the file usable for the model
+    # TODO: That is not a general implementat right? can that be abstracted for any kind of Buffer?
+    # TODO: pull out the logic into module?
+    if file_path is None:
+        document = ()
+    else:
+        try:
+            document = tuple(file_path.read_text())
+        except OSError:
+            document = ()
     
     # Create state object and init it with the file buffer from above
-        
+    editor_model = EditorModel(TupleBuffer(document))
+    
     # Create input_handler object
         
     # Create renderer object
