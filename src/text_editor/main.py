@@ -1,6 +1,6 @@
 import argparse
 from pathlib import Path
-from model import EditorModel, TupleBuffer
+from text_editor.model import EditorModel, TupleBuffer
 
 # TODO: write tests
 # Parse command line arguments for file_path and return it if present (argv argument available for testability)
