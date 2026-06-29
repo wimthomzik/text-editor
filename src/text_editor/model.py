@@ -8,23 +8,31 @@ class TextBuffer(ABC):
 
     Implementations store text as lines (no trailing newlines) and must be
     immutable: every operation returns a new buffer, never mutates self.
-    Positions (line, column) are assumed in range — callers guard bounds.
+    Positions (line, column) are assumed in range —> callers guard bounds.
     """
-    
-    @abstractmethod
-    def delete_character(self, line: int, column: int) -> "TextBuffer":
-        """Insert text within a line at column. Does not split lines."""
-        ...
     
     @abstractmethod
     def insert_text(self, line: int, column: int, text: str) -> "TextBuffer":
         """Insert text into the line at column. Stays on one line; does not split."""
         ...
 
-    
+    @abstractmethod
+    def delete_character(self, line: int, column: int) -> "TextBuffer":
+        """Delete the single character at column within the line. Stays on one line."""
+        ...
+
     @abstractmethod
     def split_line(self, line: int, column: int) -> "TextBuffer":
-        """Split the line at column into two lines (the newline operation)"""
+        """Split the line at column into two lines. Inverse of merge_line."""
+        ...
+
+    @abstractmethod
+    def merge_line(self, line: int) -> "TextBuffer":
+        """Join `line` with the line after it into one line, dropping the latter.
+
+        Line count decreases by one. Inverse of split_line.
+        Reads `line + 1`; callers guarantee a following line exists.
+        """
         ...
 
 @dataclass(frozen=True)
@@ -61,6 +69,12 @@ class TupleBuffer(TextBuffer):
         current_line = self.buffer[line]
         head, tail = current_line[:column], current_line[column:]
         return TupleBuffer(self.buffer[:line] + (head, tail) + self.buffer[line + 1:])
+    
+    def merge_line(self, line: int) -> "TupleBuffer":
+        head = self.buffer[line]
+        tail = self.buffer[line + 1]
+        merged_line = head + tail
+        return TupleBuffer(self.buffer[:line] + (merged_line,) + self.buffer[line + 2:])
         
 class Mode(Enum):
     NORMAL = 1
