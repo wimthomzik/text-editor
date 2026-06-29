@@ -1,4 +1,5 @@
-from text_editor.main import parse_args
+from text_editor.main import parse_args, load_buffer
+from text_editor.model import TupleBuffer
 from pathlib import Path
 
 def test_returned_file_path_is_absolut():
@@ -24,3 +25,21 @@ def test_empty_argv_returns_none():
 def test_dotdot_not_collapsed():
     file_path = parse_args(["a/../text.py"])
     assert ".." in str(file_path)
+    
+def test_load_buffer_none_returns_single_empty_line():
+    result = load_buffer(None)
+    assert result == TupleBuffer(('',))
+    
+def test_load_buffer_reads_lines_without_newlines(tmp_path):
+    file = tmp_path / "sample.txt"
+    file.write_text("first\nsecond\nthird\n")
+    result = load_buffer(file)
+    assert result == TupleBuffer(("first", "second", "third"))
+
+def test_load_buffer_unreadable_path_returns_single_empty_line(tmp_path):
+    result = load_buffer(tmp_path)
+    assert result == TupleBuffer(('',))
+
+def test_load_buffer_nonexistent_path_returns_single_empty_line(tmp_path):
+    result = load_buffer(tmp_path / "does_not_exist.txt")
+    assert result == TupleBuffer(('',))

@@ -13,7 +13,6 @@ def parse_args(argv: list[str] | None = None) -> Path | None:
 
 # TODO: inject buffer type so main doesn't name TupleBuffer directly.
 #       trigger: second buffer (RopeBuffer/PieceTableBuffer) appears.
-# TODO: write tests
 def load_buffer(file_path: Path | None) -> TextBuffer:
     if file_path is None:
         return TupleBuffer(('',))
