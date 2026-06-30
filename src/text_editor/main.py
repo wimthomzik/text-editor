@@ -1,6 +1,10 @@
 import argparse
 from pathlib import Path
-from text_editor.model import EditorModel, TupleBuffer, TextBuffer
+from text_editor.model import EditorModel, TupleBuffer, TextBuffer, Lifecycle, Mode
+from text_editor.update import update
+from text_editor.view import View
+from text_editor.input_handler import InputHandler
+import curses
 
 # argv param exists for testability: tests inject a list, prod reads sys.argv
 def parse_args(argv: list[str] | None = None) -> Path | None:
@@ -27,26 +31,27 @@ def main():
 
     file_path = parse_args()
     buffer = load_buffer(file_path)
-    editor_model = EditorModel(buffer)
-    
-    # Create input_handler object
-        
-    # Create renderer object
-        
-    # Create logger object
-        
-    # Run event loop
-    # while editor.lifecycle is Lifecycle.RUNNING:
-    
-        # input handler converts key strokes into events
-        
-        # logger logs event
-        
-        # state = update(state, event)
-        
-        # given the new  state the renderer renders the new content to screen
-        
-    # the io_file object handles the editors docuement depending on state lifecycle
+    editor_model = EditorModel(document=buffer, mode=Mode.NORMAL)
+    stdscr = curses.initscr()
+    curses.noecho()
+    curses.cbreak()
+    stdscr.keypad(True)
+            
+    view = View(stdscr)
+    input_handler = InputHandler(stdscr)
+
+    try:
+        while editor_model.lifecycle is Lifecycle.RUNNING:
+            
+            view.draw(editor_model)            
+            editor_model = update(editor_model, input_handler.next_event())
+            
+    finally:
+            curses.nocbreak()
+            stdscr.keypad(False)
+            curses.echo()
+            curses.endwin()
+    # post-loop: act on editor_model.lifecycle (save / discard / exit)
         
 
 if __name__ == "__main__":
