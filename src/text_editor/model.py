@@ -34,6 +34,17 @@ class TextBuffer(ABC):
         Reads `line + 1`; callers guarantee a following line exists.
         """
         ...
+    
+    @abstractmethod
+    def get_line(self, line: int) -> str:
+        """Return the text of the given line, without trailing newline.
+
+        A read accessor, not a transformation: returns the line's content, not a
+        new buffer. Callers derive what they need (e.g. length via len()).
+        Reads `line`; callers guarantee it exists.
+        """
+        ...
+
 
 @dataclass(frozen=True)
 class TupleBuffer(TextBuffer):
@@ -70,11 +81,15 @@ class TupleBuffer(TextBuffer):
         head, tail = current_line[:column], current_line[column:]
         return TupleBuffer(self.buffer[:line] + (head, tail) + self.buffer[line + 1:])
     
+    # TODO Write unit test
     def merge_line(self, line: int) -> "TupleBuffer":
         head = self.buffer[line]
         tail = self.buffer[line + 1]
         merged_line = head + tail
         return TupleBuffer(self.buffer[:line] + (merged_line,) + self.buffer[line + 2:])
+    
+    def get_line(self, line: int) -> str:
+        return self.buffer[line]
         
 class Mode(Enum):
     NORMAL = 1
