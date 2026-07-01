@@ -44,7 +44,14 @@ class TextBuffer(ABC):
         Reads `line`; callers guarantee it exists.
         """
         ...
-
+    
+    @abstractmethod
+    def line_count(self) -> int:
+        """Return the number of lines in the buffer.
+        
+        Always >= 1: an empty buffer holds one empty line, never zero.
+        """
+        ...
 
 @dataclass(frozen=True)
 class TupleBuffer(TextBuffer):
@@ -90,6 +97,9 @@ class TupleBuffer(TextBuffer):
     
     def get_line(self, line: int) -> str:
         return self.buffer[line]
+    
+    def line_count(self) -> int:
+        return len(self.buffer)
         
 class Mode(Enum):
     NORMAL = 1
