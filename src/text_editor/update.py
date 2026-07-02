@@ -5,9 +5,21 @@ from dataclasses import replace
 DIRECTION_KEYS = {'h': Direction.LEFT, 'j': Direction.DOWN, 'k': Direction.UP, 'l': Direction.RIGHT}
 
 def _clamp(value: int, minimum: int, maximum: int):
+    """Constrain value to [minimum, maximum].
+
+    Precondition: minimum <= maximum (caller's responsibility; asserted).
+    """
+    assert minimum <= maximum, f"clamp bounds inverted: {minimum} > {maximum}"
     return max(minimum, min(value, maximum))
 
+
 def move_cursor(cursor: Cursor, direction: Direction, buffer: TextBuffer) -> Cursor:
+    """Move cursor one step in direction, returning an always-legal Cursor.
+
+    Column is clamped to the target line's length; line to the buffer's
+    bounds. Vertical moves preserve the column where possible, clamping
+    down onto shorter lines.
+    """
     match direction:
         case Direction.LEFT:
             return replace(cursor, column=_clamp(cursor.column - 1, 0, len(buffer.get_line(cursor.line))))
@@ -21,7 +33,7 @@ def move_cursor(cursor: Cursor, direction: Direction, buffer: TextBuffer) -> Cur
             return replace(cursor, line=new_line, column=min(cursor.column, len(buffer.get_line(new_line))))
         case _:
             raise ValueError("Unknown direction")
-            
+                
 def backspace_cursor(cursor: Cursor, buffer: TextBuffer):
     """
     Computes the cursor position after a Backspace, given the buffer
@@ -34,8 +46,15 @@ def backspace_cursor(cursor: Cursor, buffer: TextBuffer):
     else: 
         return Cursor(cursor.line, cursor.column - 1)
     
-# TODO: Write unit tests
 def update(model: EditorModel, event: Event) -> EditorModel:
+    """Pure transition: (model, event) -> new model. Total over all events.
+
+    The trust boundary. Turns untrusted low-level events into legal state
+    transitions; owns all policy (mode meaning, ±1 offsets, quit derivation,
+    bounds via move_cursor/backspace_cursor). Never performs effects.
+    Unhandled (event, mode) raises — a forgotten handler is a bug, fail loud.
+    """
+    
     if isinstance(event, Arrow):
          return replace(model, cursor=move_cursor(model.cursor, event.direction, model.document))
      
