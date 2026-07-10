@@ -100,10 +100,32 @@ class TupleBuffer(TextBuffer):
     
     def line_count(self) -> int:
         return len(self.buffer)
+
+# TODO: Add tests
+@dataclass(frozen=True)
+class CommandLine:
+    
+    column: int = 1
+    line: str = ":"
+    
+    def insert_text(self, text: str) -> "CommandLine":
+        return CommandLine(self.column + 1, self.line[:self.column] + text + self.line[self.column:])
+    
+    def delete_character(self) -> "CommandLine":
+        return CommandLine(max(0, self.column - 1), self.line[:self.column] + self.line[self.column + 1:])
+    
+    def move_left(self) -> "CommandLine":
+        return CommandLine(max(0, self.column - 1), self.line)
+    
+    def move_right(self) -> "CommandLine":
+        return CommandLine(min(len(self.line), self.column + 1), self.line)
+    
+    
         
 class Mode(Enum):
     NORMAL = 1
     INSERT = 2
+    COMMAND_LINE = 3
 
 class Lifecycle(Enum):
     RUNNING = 1
@@ -122,6 +144,7 @@ class Cursor:
 class EditorModel:
     
     document: TextBuffer
+    cmdline: CommandLine = CommandLine()
     cursor: Cursor = field(default_factory=Cursor)
     mode: Mode = Mode.NORMAL
     lifecycle: Lifecycle = Lifecycle.RUNNING

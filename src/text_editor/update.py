@@ -1,4 +1,4 @@
-from text_editor.model import EditorModel, Cursor, Lifecycle, Mode, TextBuffer
+from text_editor.model import EditorModel, Cursor, Lifecycle, Mode, TextBuffer, CommandLine
 from text_editor.events import Event, Char, Escape, Backspace, Enter, Arrow, Direction
 from dataclasses import replace
 from text_editor.effects import Effect
@@ -46,7 +46,8 @@ def backspace_cursor(cursor: Cursor, buffer: TextBuffer):
         return Cursor(cursor.line - 1, len(buffer.get_line(cursor.line - 1)))
     else: 
         return Cursor(cursor.line, cursor.column - 1)
-    
+
+# TODO: add tests for new Mode
 def update(model: EditorModel, event: Event) -> tuple[EditorModel, Effect]:
     """Pure transition: (model, event) -> new model. Total over all events.
 
@@ -56,18 +57,41 @@ def update(model: EditorModel, event: Event) -> tuple[EditorModel, Effect]:
     Unhandled (event, mode) raises — a forgotten handler is a bug, fail loud.
     """
     
-    if isinstance(event, Arrow):
-         return replace(model, cursor=move_cursor(model.cursor, event.direction, model.document)), None
-     
+    if model.mode is Mode.COMMAND_LINE:
+        match event:
+            case Escape():
+                return replace(model, mode=Mode.NORMAL, cmdline=CommandLine()), None
+            case Backspace():
+                if model.cmdline.column == 0:
+                    return replace(model, mode=Mode.NORMAL, cmdline=CommandLine()), None
+                return replace(model, cmdline=model.cmdline.delete_character()), None
+            case Char(char):
+                return replace(model, cmdline=model.cmdline.insert_text(char)), None
+            case Arrow():
+                if event.direction == Direction.LEFT:
+                    return replace(model, cmdline=model.cmdline.move_left()), None
+                elif event.direction == Direction.RIGHT:
+                    return replace(model, cmdline=model.cmdline.move_right()), None
+            case Enter():
+                if model.cmdline.line == ":q":
+                    return replace(model, lifecycle=Lifecycle.QUIT), None
+                elif model.cmdline.line == ":wq":
+                    return replace(model, lifecycle=Lifecycle.QUIT), Effect.WRITE
+                else:
+                    # TODO: Have to add error message or something here
+                    return replace(model, mode=Mode.NORMAL, cmdline=CommandLine()), None
+                    
+            case _:
+                raise ValueError(f"unhandled event: {event} in mode {model.mode}")
     elif model.mode is Mode.NORMAL:
         match event:
+            case Arrow():
+                return replace(model, cursor=move_cursor(model.cursor, event.direction, model.document)), None
             case Char(char):
                 if char == 'i':
                     return replace(model, mode=Mode.INSERT), None
-                elif char == 'q':
-                    return replace(model, lifecycle=Lifecycle.QUIT), None
-                elif char == 'w':
-                    return model, Effect.WRITE
+                elif char == ':':
+                    return replace(model, mode=Mode.COMMAND_LINE), None
                 elif char in DIRECTION_KEYS:
                     return replace(model, cursor=move_cursor(model.cursor, DIRECTION_KEYS[char], model.document)), None
                 return model, None
@@ -83,6 +107,8 @@ def update(model: EditorModel, event: Event) -> tuple[EditorModel, Effect]:
             
     elif model.mode is Mode.INSERT:
         match event:
+            case Arrow():
+                return replace(model, cursor=move_cursor(model.cursor, event.direction, model.document)), None
             case Escape():
                 return replace(model, mode=Mode.NORMAL), None
             case Char(char):

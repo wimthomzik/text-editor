@@ -98,10 +98,6 @@ def test_normal_char_i_enters_insert_mode():
     updated, _ = update(_model(('a',), Cursor(0, 0)), Char('i'))
     assert updated.mode is Mode.INSERT
 
-def test_normal_char_q_sets_lifecycle_quit():
-    updated, _ = update(_model(('a',), Cursor(0, 0)), Char('q'))
-    assert updated.lifecycle is Lifecycle.QUIT
-
 def test_normal_char_hjkl_moves_cursor():
     updated, _ = update(_model(('ab',), Cursor(0, 0)), Char('l'))
     assert updated.cursor == Cursor(0, 1)
