@@ -4,7 +4,8 @@ class View:
     
     def __init__(self, stdscr):
         self.stdscr = stdscr
-        
+    
+    # TODO: Draw cmdline if in COMMAND_LINE mode
     def draw(self, model: EditorModel) -> None:
         self.stdscr.clear()
         for i in range(model.document.line_count()):

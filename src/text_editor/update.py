@@ -74,9 +74,11 @@ def update(model: EditorModel, event: Event) -> tuple[EditorModel, Effect]:
                     return replace(model, cmdline=model.cmdline.move_right()), None
             case Enter():
                 if model.cmdline.line == ":q":
-                    return replace(model, lifecycle=Lifecycle.QUIT), None
+                    return replace(model, lifecycle=Lifecycle.QUIT, cmdline=CommandLine()), None
                 elif model.cmdline.line == ":wq":
-                    return replace(model, lifecycle=Lifecycle.QUIT), Effect.WRITE
+                    return replace(model, lifecycle=Lifecycle.QUIT, cmdline=CommandLine()), Effect.WRITE
+                elif model.cmdline.line == ":w":
+                    return replace(model, mode=Mode.NORMAL, cmdline=CommandLine()), Effect.WRITE
                 else:
                     # TODO: Have to add error message or something here
                     return replace(model, mode=Mode.NORMAL, cmdline=CommandLine()), None

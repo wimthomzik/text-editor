@@ -101,7 +101,7 @@ class TupleBuffer(TextBuffer):
     def line_count(self) -> int:
         return len(self.buffer)
 
-# TODO: Add tests
+# TODO: Add tests & make reset explicit
 @dataclass(frozen=True)
 class CommandLine:
     
