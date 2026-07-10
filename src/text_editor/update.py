@@ -1,6 +1,7 @@
 from text_editor.model import EditorModel, Cursor, Lifecycle, Mode, TextBuffer
 from text_editor.events import Event, Char, Escape, Backspace, Enter, Arrow, Direction
 from dataclasses import replace
+from text_editor.effects import Effect
 
 DIRECTION_KEYS = {'h': Direction.LEFT, 'j': Direction.DOWN, 'k': Direction.UP, 'l': Direction.RIGHT}
 
@@ -46,7 +47,7 @@ def backspace_cursor(cursor: Cursor, buffer: TextBuffer):
     else: 
         return Cursor(cursor.line, cursor.column - 1)
     
-def update(model: EditorModel, event: Event) -> EditorModel:
+def update(model: EditorModel, event: Event) -> tuple[EditorModel, Effect]:
     """Pure transition: (model, event) -> new model. Total over all events.
 
     The trust boundary. Turns untrusted low-level events into legal state
@@ -56,32 +57,34 @@ def update(model: EditorModel, event: Event) -> EditorModel:
     """
     
     if isinstance(event, Arrow):
-         return replace(model, cursor=move_cursor(model.cursor, event.direction, model.document))
+         return replace(model, cursor=move_cursor(model.cursor, event.direction, model.document)), None
      
     elif model.mode is Mode.NORMAL:
         match event:
             case Char(char):
                 if char == 'i':
-                    return replace(model, mode=Mode.INSERT)
+                    return replace(model, mode=Mode.INSERT), None
                 elif char == 'q':
-                    return replace(model, lifecycle=Lifecycle.QUIT)
+                    return replace(model, lifecycle=Lifecycle.QUIT), None
+                elif char == 'w':
+                    return model, Effect.WRITE
                 elif char in DIRECTION_KEYS:
-                    return replace(model, cursor=move_cursor(model.cursor, DIRECTION_KEYS[char], model.document))
-                return model
+                    return replace(model, cursor=move_cursor(model.cursor, DIRECTION_KEYS[char], model.document)), None
+                return model, None
             case Escape():
                 # Placeholder
-                return model
+                return model, None
             case Enter():
-                return replace(model, cursor=move_cursor(model.cursor, Direction.DOWN, model.document))
+                return replace(model, cursor=move_cursor(model.cursor, Direction.DOWN, model.document)), None
             case Backspace():
-                return replace(model, cursor=backspace_cursor(model.cursor, model.document))
+                return replace(model, cursor=backspace_cursor(model.cursor, model.document)), None
             case _:
                 raise ValueError(f"unhandled event: {event} in mode {model.mode}")
             
     elif model.mode is Mode.INSERT:
         match event:
             case Escape():
-                return replace(model, mode=Mode.NORMAL)
+                return replace(model, mode=Mode.NORMAL), None
             case Char(char):
                 updated_buffer = model.document.insert_text(model.cursor.line, model.cursor.column, char)
                 updated_cursor = Cursor(model.cursor.line, model.cursor.column + 1)
@@ -92,7 +95,7 @@ def update(model: EditorModel, event: Event) -> EditorModel:
             case Backspace():
                 # TODO Test Backspace policy: delete the char before the cursor
                 if model.cursor.column == 0 and model.cursor.line == 0:
-                    return model
+                    return model, None
                 updated_cursor = backspace_cursor(model.cursor, model.document)
                 if model.cursor.column == 0:
                     updated_buffer = model.document.merge_line(model.cursor.line - 1)
@@ -100,6 +103,6 @@ def update(model: EditorModel, event: Event) -> EditorModel:
                     updated_buffer = model.document.delete_character(model.cursor.line, model.cursor.column - 1)
             case _:
                 raise ValueError(f"unhandled event: {event} in mode {model.mode}")
-        return replace(model, cursor=updated_cursor, document=updated_buffer)
+        return replace(model, cursor=updated_cursor, document=updated_buffer), None
             
     raise ValueError(f"unhandled event: {event} in mode {model.mode}")

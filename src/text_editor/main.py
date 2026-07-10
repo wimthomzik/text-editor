@@ -3,6 +3,7 @@ from pathlib import Path
 from text_editor.model import EditorModel, TupleBuffer, TextBuffer, Lifecycle, Mode
 from text_editor.update import update
 from text_editor.view import View
+from text_editor.effects import Effect
 from text_editor.input_handler import InputHandler
 import curses
 
@@ -25,6 +26,14 @@ def load_buffer_from_file(file_path: Path | None) -> TextBuffer:
         return TupleBuffer(tuple(file_path.read_text().splitlines()))    
     except OSError:
         return TupleBuffer(('',))
+    
+def write_buffer_to_file(file_path: Path | None, buffer: TextBuffer) -> None:
+    if file_path is None:
+        return
+    text = []
+    for i in range(buffer.line_count()):
+        text.append(buffer.get_line(i))
+    file_path.write_text("\n".join(text))
 
 def terminal_setup():
     stdscr = curses.initscr()
@@ -52,7 +61,12 @@ def main():
         while editor_model.lifecycle is Lifecycle.RUNNING:
             
             view.draw(editor_model)            
-            editor_model = update(editor_model, input_handler.next_event())
+            editor_model, effect = update(editor_model, input_handler.next_event())
+            match effect:
+                case Effect.WRITE:
+                    write_buffer_to_file(file_path, editor_model.document)
+                case _:
+                    continue
             
     finally:
             terminal_teardown(terminal)

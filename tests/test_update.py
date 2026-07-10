@@ -90,63 +90,63 @@ def _model(lines, cursor, mode=Mode.NORMAL):
 
 # ARROW
 def test_arrow_moves_cursor():
-    updated = update(_model(('a',), Cursor(0, 1)), Arrow(Direction.LEFT))
+    updated, _ = update(_model(('a',), Cursor(0, 1)), Arrow(Direction.LEFT))
     assert updated.cursor == Cursor(0, 0)
 
 # NORMAL
 def test_normal_char_i_enters_insert_mode():
-    updated = update(_model(('a',), Cursor(0, 0)), Char('i'))
+    updated, _ = update(_model(('a',), Cursor(0, 0)), Char('i'))
     assert updated.mode is Mode.INSERT
 
 def test_normal_char_q_sets_lifecycle_quit():
-    updated = update(_model(('a',), Cursor(0, 0)), Char('q'))
+    updated, _ = update(_model(('a',), Cursor(0, 0)), Char('q'))
     assert updated.lifecycle is Lifecycle.QUIT
 
 def test_normal_char_hjkl_moves_cursor():
-    updated = update(_model(('ab',), Cursor(0, 0)), Char('l'))
+    updated, _ = update(_model(('ab',), Cursor(0, 0)), Char('l'))
     assert updated.cursor == Cursor(0, 1)
 
 def test_normal_char_other_returns_unchanged():
     model = _model(('a',), Cursor(0, 0))
-    assert update(model, Char('z')) == model
+    assert update(model, Char('z'))[0] == model
 
 def test_normal_escape_returns_unchanged():
     model = _model(('a',), Cursor(0, 0))
-    assert update(model, Escape()) == model
+    assert update(model, Escape())[0] == model
 
 def test_normal_enter_moves_cursor_down():
-    updated = update(_model(('a', 'b'), Cursor(0, 0)), Enter())
+    updated, _ = update(_model(('a', 'b'), Cursor(0, 0)), Enter())
     assert updated.cursor == Cursor(1, 0)
 
 def test_normal_backspace_moves_cursor_left():
-    updated = update(_model(('ab',), Cursor(0, 1)), Backspace())
+    updated, _ = update(_model(('ab',), Cursor(0, 1)), Backspace())
     assert updated.cursor == Cursor(0, 0)
 
 # INSERT
 def test_insert_escape_returns_normal_mode():
-    updated = update(_model(('a',), Cursor(0, 0), Mode.INSERT), Escape())
+    updated, _ = update(_model(('a',), Cursor(0, 0), Mode.INSERT), Escape())
     assert updated.mode is Mode.NORMAL
 
 def test_insert_char_inserts_and_advances_cursor():
-    updated = update(_model(('',), Cursor(0, 0), Mode.INSERT), Char('x'))
+    updated, _ = update(_model(('',), Cursor(0, 0), Mode.INSERT), Char('x'))
     assert updated.document.get_line(0) == 'x'
     assert updated.cursor == Cursor(0, 1)
 
 def test_insert_enter_splits_line():
-    updated = update(_model(('ab',), Cursor(0, 1), Mode.INSERT), Enter())
+    updated, _ = update(_model(('ab',), Cursor(0, 1), Mode.INSERT), Enter())
     assert updated.document.line_count() == 2
     assert updated.cursor == Cursor(1, 0)
 
 def test_insert_backspace_at_top_left_returns_unchanged():
     model = _model(('a',), Cursor(0, 0), Mode.INSERT)
-    assert update(model, Backspace()) == model
+    assert update(model, Backspace())[0] == model
 
 def test_insert_backspace_at_line_start_merges_lines():
-    updated = update(_model(('ab', 'c'), Cursor(1, 0), Mode.INSERT), Backspace())
+    updated, _ = update(_model(('ab', 'c'), Cursor(1, 0), Mode.INSERT), Backspace())
     assert updated.document.get_line(0) == 'abc'
     assert updated.cursor == Cursor(0, 2)
 
 def test_insert_backspace_mid_line_deletes_char():
-    updated = update(_model(('abc',), Cursor(0, 2), Mode.INSERT), Backspace())
+    updated, _ = update(_model(('abc',), Cursor(0, 2), Mode.INSERT), Backspace())
     assert updated.document.get_line(0) == 'ac'
     assert updated.cursor == Cursor(0, 1)
