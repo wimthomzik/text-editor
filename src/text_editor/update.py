@@ -62,7 +62,7 @@ def update(model: EditorModel, event: Event) -> tuple[EditorModel, Effect]:
             case Escape():
                 return replace(model, mode=Mode.NORMAL, cmdline=CommandLine()), None
             case Backspace():
-                if model.cmdline.column == 0:
+                if model.cmdline.line == ":":
                     return replace(model, mode=Mode.NORMAL, cmdline=CommandLine()), None
                 return replace(model, cmdline=model.cmdline.delete_character()), None
             case Char(char):
@@ -72,6 +72,8 @@ def update(model: EditorModel, event: Event) -> tuple[EditorModel, Effect]:
                     return replace(model, cmdline=model.cmdline.move_left()), None
                 elif event.direction == Direction.RIGHT:
                     return replace(model, cmdline=model.cmdline.move_right()), None
+                else:
+                    return model, None
             case Enter():
                 if model.cmdline.line == ":q":
                     return replace(model, lifecycle=Lifecycle.QUIT, cmdline=CommandLine()), None

@@ -111,11 +111,12 @@ class CommandLine:
     def insert_text(self, text: str) -> "CommandLine":
         return CommandLine(self.column + 1, self.line[:self.column] + text + self.line[self.column:])
     
+    # Starting char ':' never gets deleted
     def delete_character(self) -> "CommandLine":
-        return CommandLine(max(0, self.column - 1), self.line[:self.column] + self.line[self.column + 1:])
+        return CommandLine(max(1, self.column - 1), self.line[:max(1, self.column - 1)] + self.line[self.column:])
     
     def move_left(self) -> "CommandLine":
-        return CommandLine(max(0, self.column - 1), self.line)
+        return CommandLine(max(1, self.column - 1), self.line)
     
     def move_right(self) -> "CommandLine":
         return CommandLine(min(len(self.line), self.column + 1), self.line)
