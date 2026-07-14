@@ -44,5 +44,4 @@ class View:
             cursor_screen_pos = to_screen_position(offsets[model.cursor.line], model.cursor.column, width)
             self.stdscr.move(cursor_screen_pos.y, cursor_screen_pos.x)
             
-            
         self.stdscr.refresh()
