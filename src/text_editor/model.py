@@ -120,7 +120,11 @@ class CommandLine:
     
     def move_right(self) -> "CommandLine":
         return CommandLine(min(len(self.line), self.column + 1), self.line)
-    
+
+@dataclass(frozen=True)
+class ScreenPosition:
+    y: int
+    x: int
     
         
 class Mode(Enum):
